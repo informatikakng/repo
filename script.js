@@ -1,37 +1,53 @@
 const apiURL = "https://script.google.com/macros/s/AKfycbx7ImRaOvd0litVRr3b6YO3HCtft6etJnyuXm7EPURKn-4A1uhDUbP0_ccEIS01QdiTcA/exec";
 
 const CACHE_KEY = "mgmp_data";
+
 let allData = [];
+let filteredData = [];
+
+// 🔥 PAGINATION
+let currentPage = 1;
+const perPage = 12;
 
 const container = document.getElementById("data-container");
 
 showLoading();
 
-// 🔥 CEK CACHE DULU
+// ============================
+// 🔥 LOAD CACHE DULU
+// ============================
+
 const cached = localStorage.getItem(CACHE_KEY);
 
 if (cached) {
   allData = JSON.parse(cached);
-  renderData(allData);
+  filteredData = allData;
+  renderData(filteredData);
   console.log("⚡ Load dari cache");
 }
 
+// ============================
+// 🌐 FETCH DATA BARU
+// ============================
 
-// 🔄 FETCH DATA BARU
 fetch(apiURL)
   .then(res => res.json())
   .then(data => {
     allData = data;
+    filteredData = allData;
 
-    // simpan ke cache
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
 
-    renderData(allData);
+    renderData(filteredData);
     console.log("🌐 Load dari API");
   })
   .catch(() => {
     if (!cached) showEmpty("Gagal memuat data");
   });
+
+// ============================
+// 📄 RENDER DATA (PAGINATION)
+// ============================
 
 function renderData(data) {
   container.innerHTML = "";
@@ -41,8 +57,15 @@ function renderData(data) {
     return;
   }
 
-  data.forEach((item, index) => {
+  const start = (currentPage - 1) * perPage;
+  const end = start + perPage;
+
+  const pageData = data.slice(start, end);
+
+  pageData.forEach((item, index) => {
     if (!item.judul) return;
+
+    const realIndex = start + index;
 
     container.innerHTML += `
       <div class="card">
@@ -60,11 +83,82 @@ function renderData(data) {
           🏫 ${item.sekolah}
         </div>
 
-        <a href="detail.html?id=${index}" class="btn">🔍 Lihat Detail</a>
+        <a href="detail.html?id=${realIndex}" class="btn">🔍 Lihat Detail</a>
       </div>
     `;
   });
+
+  renderPagination(data.length);
 }
+
+// ============================
+// 🔘 PAGINATION UI
+// ============================
+
+function renderPagination(total) {
+  const totalPages = Math.ceil(total / perPage);
+
+  let html = `<div class="pagination">`;
+
+  html += `<button onclick="prevPage()">◀</button>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+  }
+
+  html += `<button onclick="nextPage(${totalPages})">▶</button>`;
+  html += `</div>`;
+
+  document.getElementById("pagination-container").innerHTML = html;
+}
+
+function goPage(page) {
+  currentPage = page;
+  renderData(filteredData);
+}
+
+function prevPage() {
+  if (currentPage > 1) {
+    currentPage--;
+    renderData(filteredData);
+  }
+}
+
+function nextPage(totalPages) {
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderData(filteredData);
+  }
+}
+
+// ============================
+// 🔍 FILTER
+// ============================
+
+document.getElementById("search").addEventListener("input", filterData);
+document.getElementById("jenis").addEventListener("change", filterData);
+document.getElementById("kelas").addEventListener("change", filterData);
+
+function filterData() {
+  const keyword = document.getElementById("search").value.toLowerCase();
+  const jenis = document.getElementById("jenis").value;
+  const kelas = document.getElementById("kelas").value;
+
+  filteredData = allData.filter(item => {
+    return (
+      (item.judul || "").toLowerCase().includes(keyword) &&
+      (jenis === "" || item.jenis === jenis) &&
+      (kelas === "" || item.kelas === kelas)
+    );
+  });
+
+  currentPage = 1; // reset ke halaman pertama
+  renderData(filteredData);
+}
+
+// ============================
+// 🔧 HELPER
+// ============================
 
 function shortText(text) {
   if (!text) return "";
@@ -77,25 +171,4 @@ function showLoading() {
 
 function showEmpty(msg) {
   container.innerHTML = `<div class="empty">${msg}</div>`;
-}
-
-/* FILTER */
-document.getElementById("search").addEventListener("input", filterData);
-document.getElementById("jenis").addEventListener("change", filterData);
-document.getElementById("kelas").addEventListener("change", filterData);
-
-function filterData() {
-  const keyword = document.getElementById("search").value.toLowerCase();
-  const jenis = document.getElementById("jenis").value;
-  const kelas = document.getElementById("kelas").value;
-
-  const filtered = allData.filter(item => {
-    return (
-      (item.judul || "").toLowerCase().includes(keyword) &&
-      (jenis === "" || item.jenis === jenis) &&
-      (kelas === "" || item.kelas === kelas)
-    );
-  });
-
-  renderData(filtered);
 }
