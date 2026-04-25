@@ -229,3 +229,33 @@ body {
     background: #1e40af;
     font-weight: bold;
 }
+
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    margin: 3px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    min-width: 32px;
+}
+
+.pagination button:hover {
+    background: #1d4ed8;
+}
+
+.pagination .active {
+    background: #1e40af;
+    font-weight: bold;
+}
+
+.pagination span {
+    margin: 0 5px;
+    color: #64748b;
+}
