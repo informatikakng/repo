@@ -97,16 +97,36 @@ function renderData(data) {
 
 function renderPagination(total) {
   const totalPages = Math.ceil(total / perPage);
+  const maxVisible = 5; // jumlah angka tengah
 
   let html = `<div class="pagination">`;
 
+  // tombol prev
   html += `<button onclick="prevPage()">◀</button>`;
 
-  for (let i = 1; i <= totalPages; i++) {
+  // halaman pertama
+  if (currentPage > 3) {
+    html += `<button onclick="goPage(1)">1</button>`;
+    html += `<span>...</span>`;
+  }
+
+  // range tengah
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(totalPages, currentPage + 2);
+
+  for (let i = start; i <= end; i++) {
     html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
   }
 
+  // halaman terakhir
+  if (currentPage < totalPages - 2) {
+    html += `<span>...</span>`;
+    html += `<button onclick="goPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  // tombol next
   html += `<button onclick="nextPage(${totalPages})">▶</button>`;
+
   html += `</div>`;
 
   document.getElementById("pagination-container").innerHTML = html;
